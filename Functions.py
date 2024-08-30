@@ -8,8 +8,17 @@ class DataHandler:
         self.x = x
         self.y = y
         
-    def PlotData(self, x_values, y_values, title):
+    def PlotDataWithFittedCurve(self, x_values, y_values, title):
         plt.plot(x_values, y_values, 'b-', label='Fitted curve')
+        plt.plot(self.x, self.y ,'ro', label='Data')
+        plt.axis([0,1.0,0, self.y.max()])
+        plt.xlabel(r'$x$')
+        plt.ylabel(r'$y$')
+        plt.title(title)
+        plt.legend()
+        plt.show()
+
+    def PlotData(self, title):
         plt.plot(self.x, self.y ,'ro', label='Data')
         plt.axis([0,1.0,0, self.y.max()])
         plt.xlabel(r'$x$')
@@ -33,9 +42,9 @@ class DataHandler:
 
         return y_predict
         
-    def SkLearnPredict(self):
+    def SkLearnPredict(self, polynomial_order):
         #Parametrise using scikit-learn
-        poly = PolynomialFeatures(degree = 2, include_bias=False)
+        poly = PolynomialFeatures(degree = polynomial_order, include_bias=False)
         poly_model = LinearRegression()
 
         poly_features = poly.fit_transform(self.x.reshape(-1, 1))
@@ -47,3 +56,14 @@ class DataHandler:
         yPredict = poly_model.predict(x_model_poly)
 
         return (x_model, yPredict)
+
+    def SkLearnFeatureMatrix(self, polynomial_order):
+        poly = PolynomialFeatures(degree = polynomial_order, include_bias=False)
+        poly_model = LinearRegression()
+
+        poly_features = poly.fit_transform(self.x) #.reshape(-1, 1))
+        poly_model.fit(poly_features, self.y)
+
+        x_model = np.linspace(0, 1.0, 100) #.reshape(-1, 1)
+
+        return poly_features
