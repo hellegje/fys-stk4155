@@ -18,14 +18,6 @@ class DataHandler:
         plt.legend()
         plt.show()
 
-    def PlotData(self, title):
-        plt.plot(self.x, self.y ,'ro', label='Data')
-        plt.axis([0,1.0,0, self.y.max()])
-        plt.xlabel(r'$x$')
-        plt.ylabel(r'$y$')
-        plt.title(title)
-        plt.legend()
-        plt.show()
     
     def Predict(self, xModel):
         #From ChatGPT:
