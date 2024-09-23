@@ -1,0 +1,39 @@
+   def plot_3d_results(x, y, z_actual, z_pred, title):
+        fig = plt.figure(figsize=(10, 7))
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Scatter plot of actual values
+        ax.scatter(x, y, z_actual, label='Actual z', color='blue', alpha=0.6)
+
+        # Scatter plot of predicted values
+        ax.scatter(x, y, z_pred, label='Predicted z', color='red', alpha=0.6)
+
+        # Labels and title
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        ax.set_title(title)
+        
+        ax.legend()
+        plt.show()
+
+    # Extract x and y values from the feature matrix
+    def extract_xy_from_features(X, degree):
+        poly = PolynomialFeatures(degree, include_bias=True)
+        # Assuming you fit the polynomial features based on (x, y, z)
+        n_features = poly.fit_transform(np.zeros((1, 3))).shape[1]
+        
+        # Extract first and second columns corresponding to x and y
+        # Assuming that X was created with the same feature ordering (x first, then y)
+        x_values = X[:, 1]  # First feature (x)
+        y_values = X[:, 2]  # Second feature (y)
+        
+        return x_values, y_values
+
+    # Extract x_train, y_train, x_test, y_test from X_train and X_test
+    x_train, y_train = extract_xy_from_features(X_train, order)
+    x_test, y_test = extract_xy_from_features(X_test, order)
+
+    # Use the function for training and test sets
+    plot_3d_results(x_train, y_train, z_train, z_tilde, 'Training Set: Actual vs Predicted')
+    plot_3d_results(x_test, y_test, z_test, z_predict, 'Test Set: Actual vs Predicted')
