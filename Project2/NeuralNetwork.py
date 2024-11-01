@@ -44,6 +44,7 @@ class NeuralNetwork:
     def __init__(self, 
                  #output_layer, 
                  cost_function, 
+                 random_state = None,
                  #Output layer:
                  outputlayer_activation = None, 
                  n_output_neurons = 1, 
@@ -56,11 +57,12 @@ class NeuralNetwork:
         #self.input_layer = input_layer
         self.hidden_layers = hidden_layers
         self.cost_function = cost_function
-        output_layer = OutputLayer(outputlayer_activation, n_outputs)
+        output_layer = OutputLayer(outputlayer_activation, n_outputs, random_state)
 
         #User can self-define a list of hidden layers, otherwise the default is one layer with given values
         if hidden_layers == None:
-            self.hidden_layers = list([HiddenLayer(hidden_activation, hidden_features, hidden_neurons)])
+            layer = HiddenLayer(hidden_activation, hidden_features, hidden_neurons, random_state)
+            self.hidden_layers = list([layer])
         
         n_neurons_last_hiddenlayer = self.hidden_layers[-1]._get_hidden_neurons()
         output_layer._set_weights(n_neurons_last_hiddenlayer)
@@ -137,7 +139,7 @@ class NeuralNetwork:
 
     
     # Train the model
-    def train(self, x, y, epochs, learning_rate):
+    def train(self, x, y, epochs, learning_rate, verbosity=False):
         final_loss = 0
         #Becomes relevant if adding a stop condition:
         final_epoch = 0
@@ -148,7 +150,8 @@ class NeuralNetwork:
             # Compute loss for monitoring (optional)
             loss = self.evaluate_model(activations[-1], y)
             final_loss = loss
-            #print(f"Epoch {epoch+1}, Loss: {loss}")
+            if verbosity:
+                print(f"Epoch {epoch+1}, Loss: {loss}")
             # Backpropagation
             gradients = self.BackPropagation(activations, y, x)
             # Update weights and biases
@@ -157,8 +160,10 @@ class NeuralNetwork:
         return [final_epoch, final_loss]
     
 class Layer:
-    def __init__(self, activation_function, n_features, n_hidden_neurons):
+    def __init__(self, activation_function, n_features, n_hidden_neurons, random_state=None):
         # weights and bias in the hidden layer
+        if random_state is not None and random_state >= 0:
+            np.random.seed(random_state)
         self.w = np.random.randn(n_features, n_hidden_neurons)
         #self.b = np.zeros(n_hidden_neurons) #+ 0.01 
         self.b = np.zeros((1, n_hidden_neurons))
@@ -204,14 +209,17 @@ class HiddenLayer(Layer):
         return self.n_neurons
 
 class OutputLayer(Layer):
-    def __init__(self, activation_function, n_outputs):
+    def __init__(self, activation_function, n_outputs, random_state=None):
         # weights and bias in the output layer
         #self.b = np.zeros(n_outputs) #+ 0.01 
+        self.random_state = random_state
         self.n_outputs = n_outputs
         self.b = np.zeros((1, n_outputs))
         self.activation_fnc = activation_function
 
     def _set_weights(self, n_hidden_neurons):
+        if self.random_state is not None and self.random_state >= 0:
+            np.random.seed(self.random_state)
         self.w = np.random.randn(n_hidden_neurons, self.n_outputs)
 
 #TODO: Input layer if/when needed
