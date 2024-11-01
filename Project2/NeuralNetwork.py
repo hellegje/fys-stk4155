@@ -46,22 +46,23 @@ class NeuralNetwork:
                  cost_function, 
                  random_state = None,
                  #Output layer:
-                 outputlayer_activation = None, 
-                 n_output_neurons = 1, 
+                 outputlayer_activation = None,
                  n_outputs = 1, 
+                 output_bias = 0,
                  #Hidden layer:
                  hidden_activation = ActivationFunction.Sigmoid,
                  hidden_features = 1,
                  hidden_neurons = 1,
+                 hidden_bias = 0,
                  hidden_layers = None):
         #self.input_layer = input_layer
         self.hidden_layers = hidden_layers
         self.cost_function = cost_function
-        output_layer = OutputLayer(outputlayer_activation, n_outputs, random_state)
+        output_layer = OutputLayer(outputlayer_activation, n_outputs, random_state, output_bias)
 
         #User can self-define a list of hidden layers, otherwise the default is one layer with given values
         if hidden_layers == None:
-            layer = HiddenLayer(hidden_activation, hidden_features, hidden_neurons, random_state)
+            layer = HiddenLayer(hidden_activation, hidden_features, hidden_neurons, random_state, hidden_bias)
             self.hidden_layers = list([layer])
         
         n_neurons_last_hiddenlayer = self.hidden_layers[-1]._get_hidden_neurons()
@@ -160,13 +161,12 @@ class NeuralNetwork:
         return [final_epoch, final_loss]
     
 class Layer:
-    def __init__(self, activation_function, n_features, n_hidden_neurons, random_state=None):
+    def __init__(self, activation_function, n_features, n_hidden_neurons, random_state=None, hidden_bias=0):
         # weights and bias in the hidden layer
         if random_state is not None and random_state >= 0:
             np.random.seed(random_state)
         self.w = np.random.randn(n_features, n_hidden_neurons)
-        #self.b = np.zeros(n_hidden_neurons) #+ 0.01 
-        self.b = np.zeros((1, n_hidden_neurons))
+        self.b = np.zeros((1, n_hidden_neurons)) + hidden_bias
         #TODO: For different activation functions, a small initial value may be beneficial, especially for relu to avoid vanishing neurons
         self.activation_fnc = activation_function
         self.n_neurons = n_hidden_neurons
@@ -209,12 +209,11 @@ class HiddenLayer(Layer):
         return self.n_neurons
 
 class OutputLayer(Layer):
-    def __init__(self, activation_function, n_outputs, random_state=None):
+    def __init__(self, activation_function, n_outputs, random_state=None, output_bias=0):
         # weights and bias in the output layer
-        #self.b = np.zeros(n_outputs) #+ 0.01 
         self.random_state = random_state
         self.n_outputs = n_outputs
-        self.b = np.zeros((1, n_outputs))
+        self.b = np.zeros((1, n_outputs)) + output_bias
         self.activation_fnc = activation_function
 
     def _set_weights(self, n_hidden_neurons):
