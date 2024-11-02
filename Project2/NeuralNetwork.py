@@ -117,8 +117,10 @@ class NeuralNetwork:
             
     
     #So as to be flexible, we can expand the model after creation - will probably need a method like GetHiddenLayers
-    def add_hidden_layer(self, position, layer):
+    def add_hidden_layer(self, layer):
         self.hidden_layers.append(layer) #TODO: At a specific position
+        n_neurons_last_hiddenlayer = self.hidden_layers[-1]._get_hidden_neurons()
+        self.output_layer._set_weights(n_neurons_last_hiddenlayer)
             
     def evaluate_model(self, predicted_value, target_value):
         match self.cost_function:
@@ -173,7 +175,6 @@ class NeuralNetwork:
             if i > 0:
                 delta = np.matmul(delta, self.hidden_layers[i].get_weights().T) * self.hidden_layers[i-1].derivative(activations[i-1])
 
-        
         return output_weights_gradient, output_bias_gradient, hidden_weights_gradient, hidden_bias_gradient
     
     # Update weights and biases using gradients
