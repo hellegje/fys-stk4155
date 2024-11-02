@@ -50,6 +50,15 @@ def r2(y_target, y_pred):
 def accuracy(y_target, y_pred):
     return error.accuracy_score(y_target, y_pred)
 
+def mse_derivative(y_target, y_pred):
+    return y_pred - y_target
+
+def r2_derivative():
+    raise NotImplementedError()
+
+def accuracy_derivative():
+    raise NotImplementedError()
+
 def cross_entropy(predictions, targets):
     epsilon = 1e-12
     predictions = np.clip(predictions, epsilon, 1. - epsilon)
@@ -77,6 +86,7 @@ class NeuralNetwork:
                  hidden_bias = 0,
                  hidden_layers = None):
         
+
         self.n_inputs = X_data.shape[0]
         self.n_features = X_data.shape[1] if len(X_data.shape) > 1 else 1
         self.n_hidden_neurons = hidden_neurons
@@ -91,14 +101,14 @@ class NeuralNetwork:
 
         #User can self-define a list of hidden layers, otherwise the default is one layer with given values
         if hidden_layers == None:
-            layer = HiddenLayer(hidden_activation, self.n_features, hidden_neurons, random_state, hidden_bias)
+            layer = HiddenLayer(hidden_activation, hidden_neurons, random_state, hidden_bias)
             self.hidden_layers = list([layer])
         
         n_neurons_last_hiddenlayer = self.hidden_layers[-1]._get_hidden_neurons()
         output_layer._set_weights(n_neurons_last_hiddenlayer)
         self.output_layer = output_layer
             
-    
+    #TODO: Consider moving the weights to the initialisation of the model rather than the layer
     #So as to be flexible, we can expand the model after creation - will probably need a method like GetHiddenLayers
     def add_hidden_layer(self, position, layer):
         self.hidden_layers.append(layer) #TODO: At a specific position
@@ -114,9 +124,10 @@ class NeuralNetwork:
             case _:
                 raise NotImplementedError(f"Cost function {self.cost_function} not implemented.")
 
-    def FeedForward(self, x):
+    #For training
+    def feed_forward(self):
         activations = []
-        a = x  # Initial input is x
+        a = self.X_data  # Initial input is x
         for layer in self.hidden_layers:
             z = np.matmul(a, layer.get_weights()) + layer.get_biases()
             a = layer.activation(z)
@@ -125,10 +136,21 @@ class NeuralNetwork:
         z_out = np.matmul(a, self.output_layer.get_weights()) + self.output_layer.get_biases()
         a_out = self.output_layer.activation(z_out)
         activations.append(a_out)
-
         return activations
     
-    def BackPropagation(self, activations, y, x):
+    #For output
+    def feed_forward_out(self, X):
+        a = X
+        for layer in self.hidden_layers:
+            z = np.matmul(a, layer.get_weights()) + layer.get_biases()
+            a = layer.activation(z)
+        # Output layer computation
+        z_out = np.matmul(a, self.output_layer.get_weights()) + self.output_layer.get_biases()
+        a_out = self.output_layer.activation(z_out)
+
+        return a_out
+    
+    def BackPropagation(self, activations):
         # Initializing gradients
         output_weights_gradient = []
         output_bias_gradient = []
@@ -137,10 +159,9 @@ class NeuralNetwork:
         hidden_bias_gradient = []
         
         a_output = activations[-1]
-        delta_output = (a_output - y) #* self.output_layer.derivative(a_output)
+        delta_output = self.derivative(a_output) #* self.output_layer.derivative(a_output)
 
-        #print(0.5 * ((a_output - y) ** 2))  # MSE for linear output
-        
+
         # Backpropagate through hidden layers
         delta = np.matmul(delta_output, self.output_layer.get_weights().T) * self.hidden_layers[-1].derivative(activations[-2])
         output_weights_gradient = np.matmul(activations[-2].T, delta_output)
@@ -148,15 +169,26 @@ class NeuralNetwork:
 
         for i in reversed(range(len(self.hidden_layers))):
             # Insert at start of list because working backwards
-            hidden_weights_gradient.insert(0, np.matmul(activations[i-1].T, delta) if i > 0 else np.matmul(x.T, delta))
+            hidden_weights_gradient.insert(0, np.matmul(activations[i-1].T, delta) if i > 0 else np.matmul(self.X_data.T, delta))
             hidden_bias_gradient.insert(0, np.sum(delta, axis=0, keepdims=True))
 
             # Prepare delta for the next layer back
             if i > 0:
                 delta = np.matmul(delta, self.hidden_layers[i].get_weights().T) * self.hidden_layers[i-1].derivative(activations[i-1])
-
         
         return output_weights_gradient, output_bias_gradient, hidden_weights_gradient, hidden_bias_gradient
+
+    def derivative(self, a):
+        y = self.Y_data
+        match self.cost_function:
+            case CostFunction.MSE:
+                return mse_derivative(y, a)
+            case CostFunction.R2:
+                return r2_derivative(y, a)
+            case CostFunction.Cross_Entropy:
+                return cross_entropy_derivative(y, a)
+            case _:
+                raise NotImplementedError(f"Derivative function not implemented for {self.activation_fnc}")
     
     # Update weights and biases using gradients
     def update_parameters(self, gradients, learning_rate):
@@ -180,23 +212,26 @@ class NeuralNetwork:
         for epoch in range(epochs):
             final_epoch = epoch + 1
             # Feedforward pass
-            activations = self.FeedForward(self.X_data)
+            activations = self.feed_forward()
             # Compute loss for monitoring (optional)
             loss = self.evaluate_model(activations[-1], self.Y_data)
             final_loss = loss
             if verbosity:
                 print(f"Epoch {epoch+1}, Loss: {loss}")
             # Backpropagation
-            gradients = self.BackPropagation(activations, self.Y_data, self.X_data)
+            gradients = self.BackPropagation(activations)
+            # Check gradients for NaNs
+            if any(np.isnan(g).any() for g in gradients):
+                print("NaN detected in gradients during backpropagation.")
+                break
             # Update weights and biases
             self.update_parameters(gradients, learning_rate)
 
         return [final_epoch, final_loss]
     
-    def predict(self, x):
+    def predict(self, X):
         # Perform a feedforward pass to get the final activations
-        final_activations = self.FeedForward(x)[-1]
-        return final_activations
+        return self.feed_forward_out(X)
 
     
 class Layer:
