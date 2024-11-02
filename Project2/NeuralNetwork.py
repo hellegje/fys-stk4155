@@ -4,6 +4,7 @@ from enum import Enum
 from random import random, seed
 import numpy as np
 import sklearn.metrics as error
+from autograd import elementwise_grad
 
 class ActivationFunction(Enum):
     Sigmoid = 0,
@@ -11,29 +12,39 @@ class ActivationFunction(Enum):
     LeakyRELU = 2,
     Softmax = 3
 
-def sigmoid(z):
-    return 1.0/(1.0+np.exp(-z)) 
+#From lecture notes:
+def sigmoid(X):
+    try:
+        return 1.0 / (1 + np.exp(-X))
+    except FloatingPointError:
+        return np.where(X > np.zeros(X.shape), np.ones(X.shape), np.zeros(X.shape))
 
 def sigmoid_derivative(a):
     return a * (1 - a)
+    #return elementwise_grad(sigmoid) #TODO: Look into autograd
 
-#TODO: Check these
-def relu(z):
-    return np.maximum(0, z)
+def relu(X):
+    return np.where(X > np.zeros(X.shape), X, np.zeros(X.shape))
 
 def relu_derivative(z):
     return np.where(z > 0, 1, 0)
 
-def leaky_relu(z, alpha=0.01):
-    return np.where(z > 0, z, alpha * z)
+def leaky_relu(X):
+    delta = 10e-4
+    return np.where(X > np.zeros(X.shape), X, delta * X)
 
-def leaky_relu_derivative(z, alpha=0.01):
-    return np.where(z > 0, 1, alpha)
+def leaky_relu_derivative(z):
+    delta = 10e-4
+    return np.where(z > 0, 1, delta)
 
-def softmax(z):
-    exp_values = np.exp(z - np.max(z, axis=1, keepdims=True))
-    probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
-    return probabilities
+def softmax(X):
+    X = X - np.max(X, axis=-1, keepdims=True)
+    delta = 10e-10
+    return np.exp(X) / (np.sum(np.exp(X), axis=-1, keepdims=True) + delta)
+
+def softmax_derivative(func):
+    return elementwise_grad(func)
+
 
 class CostFunction(Enum):
     MSE = 0,
@@ -51,14 +62,21 @@ def accuracy(y_target, y_pred):
     return error.accuracy_score(y_target, y_pred)
 
 def cross_entropy(predictions, targets):
-    epsilon = 1e-12
-    predictions = np.clip(predictions, epsilon, 1. - epsilon)
-    return -np.mean(targets * np.log(predictions) + (1 - targets) * np.log(1 - predictions))
+    return -(1.0 / targets.size) * np.sum(targets * np.log(predictions + 10e-10))
 
 def cross_entropy_derivative(predictions, targets):
     epsilon = 1e-12
     predictions = np.clip(predictions, epsilon, 1. - epsilon)
-    return (predictions - targets) / (predictions * (1 - predictions))
+    return (predictions - targets.size) / (predictions * (1 - predictions))
+
+def mse_derivative(y_target, y_pred):
+    return y_pred - y_target
+
+def r2_derivative():
+    raise NotImplementedError()
+
+def accuracy_derivative():
+    raise NotImplementedError()
 
 class NeuralNetwork:
     def __init__(self, 
@@ -77,7 +95,6 @@ class NeuralNetwork:
                  hidden_bias = 0,
                  hidden_layers = None):
         
-        self.n_inputs = X_data.shape[0]
         self.n_features = X_data.shape[1] if len(X_data.shape) > 1 else 1
         self.n_hidden_neurons = hidden_neurons
         #self.n_categories = n_categories
@@ -137,7 +154,8 @@ class NeuralNetwork:
         hidden_bias_gradient = []
         
         a_output = activations[-1]
-        delta_output = (a_output - y) #* self.output_layer.derivative(a_output)
+        delta_output = self.derivative(a_output) * self.output_layer.derivative(a_output) #TODO: ?
+
 
         #print(0.5 * ((a_output - y) ** 2))  # MSE for linear output
         
@@ -195,8 +213,21 @@ class NeuralNetwork:
     
     def predict(self, x):
         # Perform a feedforward pass to get the final activations
-        final_activations = self.FeedForward(x)[-1]
-        return final_activations
+        final_activation = self.FeedForward(x)[-1]
+        return final_activation
+    
+    def derivative(self, a):
+        y = self.Y_data
+        match self.cost_function:
+            case CostFunction.MSE:
+                return mse_derivative(y, a)
+            case CostFunction.R2:
+                return r2_derivative(y, a)
+            case CostFunction.Cross_Entropy:
+                return cross_entropy_derivative(y, a)
+            case _:
+                raise NotImplementedError(f"Derivative function not implemented for {self.activation_fnc}")
+    
 
     
 class Layer:
