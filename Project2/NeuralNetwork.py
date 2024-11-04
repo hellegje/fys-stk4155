@@ -5,6 +5,7 @@ from random import random, seed
 import numpy as np
 import sklearn.metrics as error
 from autograd import elementwise_grad
+#from Scaling import ScalingAlgorithm
 
 class ActivationFunction(Enum):
     Sigmoid = 0,
@@ -84,6 +85,7 @@ class NeuralNetwork:
                  Y_data,
                  #output_layer, 
                  cost_function, 
+                 #scaler = ScalingAlgorithm.Adam,
                  random_state = None,
                  #Output layer:
                  output_activation = None,
@@ -114,7 +116,55 @@ class NeuralNetwork:
         n_neurons_last_hiddenlayer = self.hidden_layers[-1]._get_hidden_neurons()
         output_layer._set_weights(n_neurons_last_hiddenlayer)
         self.output_layer = output_layer
+
+
+        #From ChatGPT - testing initialising ADAm
+                # Adam hyperparameters
+        self.alpha = 0.001   # Learning rate
+        self.beta1 = 0.9     # Exponential decay rate for the first moment
+        self.beta2 = 0.999   # Exponential decay rate for the second moment
+        self.epsilon = 1e-8  # Small constant to prevent division by zero
+
+        # Initialize m and v for Adam
+        self.m_w = [np.zeros_like(layer.get_weights()) for layer in self.hidden_layers + [self.output_layer]]
+        self.v_w = [np.zeros_like(layer.get_weights()) for layer in self.hidden_layers + [self.output_layer]]
+        self.m_b = [np.zeros_like(layer.get_biases()) for layer in self.hidden_layers + [self.output_layer]]
+        self.v_b = [np.zeros_like(layer.get_biases()) for layer in self.hidden_layers + [self.output_layer]]
+        self.t = 1  # Time step for Adam updates
+
+
+    #Function from ChaptGPT - testing
+    def AdamUpdate(self, output_weights_gradient, output_bias_gradient, hidden_weights_gradient, hidden_bias_gradient):
+        # Update weights and biases with Adam optimization
+        layers = self.hidden_layers + [self.output_layer]
+        gradients_w = hidden_weights_gradient + [output_weights_gradient]
+        gradients_b = hidden_bias_gradient + [output_bias_gradient]
+
+        for i, layer in enumerate(layers):
+            # Update m and v for weights
+            self.m_w[i] = self.beta1 * self.m_w[i] + (1 - self.beta1) * gradients_w[i]
+            self.v_w[i] = self.beta2 * self.v_w[i] + (1 - self.beta2) * (gradients_w[i] ** 2)
             
+            # Bias-corrected estimates
+            m_w_hat = self.m_w[i] / (1 - self.beta1 ** self.t)
+            v_w_hat = self.v_w[i] / (1 - self.beta2 ** self.t)
+            
+            # Update weights
+            layer.w -= self.alpha * m_w_hat / (np.sqrt(v_w_hat) + self.epsilon)
+            
+            # Update m and v for biases
+            self.m_b[i] = self.beta1 * self.m_b[i] + (1 - self.beta1) * gradients_b[i]
+            self.v_b[i] = self.beta2 * self.v_b[i] + (1 - self.beta2) * (gradients_b[i] ** 2)
+            
+            # Bias-corrected estimates
+            m_b_hat = self.m_b[i] / (1 - self.beta1 ** self.t)
+            v_b_hat = self.v_b[i] / (1 - self.beta2 ** self.t)
+            
+            # Update biases
+            layer.b -= self.alpha * m_b_hat / (np.sqrt(v_b_hat) + self.epsilon)
+        
+        # Increment time step
+        self.t += 1   
     
     #So as to be flexible, we can expand the model after creation - will probably need a method like GetHiddenLayers
     def add_hidden_layer(self, layer):
@@ -158,7 +208,6 @@ class NeuralNetwork:
         a_output = activations[-1]
         delta_output = self.derivative(a_output) * self.output_layer.derivative(a_output) #TODO: ?
 
-
         #print(0.5 * ((a_output - y) ** 2))  # MSE for linear output
         
         # Backpropagate through hidden layers
@@ -175,8 +224,9 @@ class NeuralNetwork:
             if i > 0:
                 delta = np.matmul(delta, self.hidden_layers[i].get_weights().T) * self.hidden_layers[i-1].derivative(activations[i-1])
 
+        self.AdamUpdate(output_weights_gradient, output_bias_gradient, hidden_weights_gradient, hidden_bias_gradient)
         return output_weights_gradient, output_bias_gradient, hidden_weights_gradient, hidden_bias_gradient
-    
+
     # Update weights and biases using gradients
     def update_parameters(self, gradients, learning_rate):
         output_weights_gradient, output_bias_gradient, hidden_weights_gradient, hidden_bias_gradient = gradients
