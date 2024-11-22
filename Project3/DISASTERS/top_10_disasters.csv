@@ -1,0 +1,11 @@
+Year,Seq,Glide,Disaster Group,Disaster Subgroup,Disaster Type,Disaster Subtype,Disaster Subsubtype,Event Name,Country,ISO,Region,Continent,Location,Origin,Associated Dis,Associated Dis2,OFDA Response,Appeal,Declaration,Aid Contribution,Dis Mag Value,Dis Mag Scale,Latitude,Longitude,Local Time,River Basin,Start Year,Start Month,Start Day,End Year,End Month,End Day,Total Deaths,No Injured,No Affected,No Homeless,Total Affected,Insured Damages ('000 US$),Total Damages ('000 US$),CPI,Adm Level,Admin1 Code,Admin2 Code,Geo Locations
+1931,7,,Natural,Hydrological,Flood,Riverine flood,,,China,CHN,Eastern Asia,Asia,,,Famine,,,No,No,,,Km2,,,,,1931,7.0,,1931,8.0,,3700000.0,,,,,,1400000.0,5.889171212,,,,
+1928,9002,,Natural,Climatological,Drought,Drought,,,China,CHN,Eastern Asia,Asia,"Shensi, Honan, Kansu",,,,,,,,,Km2,,,,,1928,,,1928,,,3000000.0,,,,,,,6.649479968,,,,
+1917,2,,Natural,Biological,Epidemic,,,,Soviet Union,SUN,Russian Federation,Europe,Nationwide,,,,,,,,,Vaccinated,,,,,1917,,,1917,,,2500000.0,,,,,,,4.961336798,,,,
+1959,6,,Natural,Hydrological,Flood,,,,China,CHN,Eastern Asia,Asia,North,,Famine,,,,,,,Km2,,,,,1959,7.0,,1961,7.0,,2000000.0,,,,,,,11.26304087,,,,
+1920,1,,Natural,Biological,Epidemic,Bacterial disease,,Bubonic,India,IND,Southern Asia,Asia,,,,,,,,,,Vaccinated,,,,,1920,,,1920,,,2000000.0,,,,,,,7.757726629,,,,
+1943,9002,,Natural,Climatological,Drought,Drought,,,Bangladesh,BGD,Southern Asia,Asia,,,Famine,,,No,No,,,Km2,,,,,1943,,,1943,,,1900000.0,,,,,,,6.701026324,,,,
+1965,9073,,Natural,Climatological,Drought,Drought,,,India,IND,Southern Asia,Asia,Nationwide except south,,Famine,,Yes,No,No,,,Km2,,,,,1965,,,1967,,,1500000.0,,100000000.0,,100000000.0,,100000.0,12.17425308,,,,
+1942,9003,,Natural,Climatological,Drought,Drought,,,India,IND,Southern Asia,Asia,"Calcutta, Bengal region",,Famine,,,No,No,,,Km2,,,,,1942,,,1942,,,1500000.0,,,,,,,6.327315241,,,,
+1909,1,,Natural,Biological,Epidemic,Bacterial disease,,Bubonic,China,CHN,Eastern Asia,Asia,,,,,,,,,,Vaccinated,,,,,1909,,,1909,,,1500000.0,,,,,,,3.479379053,,,,
+1907,1,,Natural,Biological,Epidemic,Bacterial disease,,Bubonic,India,IND,Southern Asia,Asia,,,,,,,,,,Vaccinated,,,,,1907,,,1907,,,1300000.0,,,,,,,3.608244944,,,,
